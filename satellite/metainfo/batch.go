@@ -325,6 +325,23 @@ func (endpoint *Endpoint) Batch(ctx context.Context, req *pb.BatchRequest) (resp
 				},
 			})
 
+			// Parts
+		case *pb.BatchRequestItem_PartList:
+			singleRequest.PartList.Header = req.Header
+
+			if singleRequest.PartList.StreamId.IsZero() && !lastStreamID.IsZero() {
+				singleRequest.PartList.StreamId = lastStreamID
+			}
+
+			response, err := endpoint.ListParts(ctx, singleRequest.PartList)
+			if err != nil {
+				return resp, err
+			}
+			resp.Responses = append(resp.Responses, &pb.BatchResponseItem{
+				Response: &pb.BatchResponseItem_PartList{
+					PartList: response,
+				},
+			})
 			// Revoke API key.
 		case *pb.BatchRequestItem_RevokeApiKey:
 			singleRequest.RevokeApiKey.Header = req.Header

@@ -1920,6 +1920,12 @@ func (endpoint *Endpoint) ListSegments(ctx context.Context, req *pb.SegmentListR
 	return response, nil
 }
 
+// ListParts list object parts.
+func (endpoint *Endpoint) ListParts(ctx context.Context, req *pb.PartListRequest) (resp *pb.PartListResponse, err error) {
+	defer mon.Task()(&ctx)(&err)
+	return nil, rpcstatus.Error(rpcstatus.Internal, "Not Implemented")
+}
+
 func convertStreamListResults(result metabase.ListStreamPositionsResult) (*pb.SegmentListResponse, error) {
 	items := make([]*pb.SegmentListItem, len(result.Segments))
 	for i, item := range result.Segments {
