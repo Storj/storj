@@ -4,13 +4,14 @@
 package stripecoinpayments
 
 import (
-	"github.com/stripe/stripe-go"
-	"github.com/stripe/stripe-go/charge"
-	"github.com/stripe/stripe-go/client"
-	"github.com/stripe/stripe-go/customerbalancetransaction"
-	"github.com/stripe/stripe-go/invoice"
-	"github.com/stripe/stripe-go/invoiceitem"
-	"github.com/stripe/stripe-go/paymentmethod"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/charge"
+	"github.com/stripe/stripe-go/v72/client"
+	"github.com/stripe/stripe-go/v72/customerbalancetransaction"
+	"github.com/stripe/stripe-go/v72/invoice"
+	"github.com/stripe/stripe-go/v72/invoiceitem"
+	"github.com/stripe/stripe-go/v72/paymentmethod"
+	"github.com/stripe/stripe-go/v72/promotioncode"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +23,8 @@ type StripeClient interface {
 	InvoiceItems() StripeInvoiceItems
 	CustomerBalanceTransactions() StripeCustomerBalanceTransactions
 	Charges() StripeCharges
+	Coupons() StripeCoupons
+	PromoCodes() StripePromoCodes
 }
 
 // StripeCustomers Stripe Customers interface.
@@ -57,6 +60,16 @@ type StripeCharges interface {
 	List(listParams *stripe.ChargeListParams) *charge.Iter
 }
 
+// StripeCoupons Stripe Coupons interface.
+type StripeCoupons interface {
+	Get(id string, params *stripe.CouponParams) (*stripe.Coupon, error)
+}
+
+// StripePromoCodes is the Stripe PromoCodes interface.
+type StripePromoCodes interface {
+	List(params *stripe.PromotionCodeListParams) *promotioncode.Iter
+}
+
 // StripeCustomerBalanceTransactions Stripe CustomerBalanceTransactions interface.
 type StripeCustomerBalanceTransactions interface {
 	New(params *stripe.CustomerBalanceTransactionParams) (*stripe.CustomerBalanceTransaction, error)
@@ -89,6 +102,14 @@ func (s *stripeClient) CustomerBalanceTransactions() StripeCustomerBalanceTransa
 
 func (s *stripeClient) Charges() StripeCharges {
 	return s.client.Charges
+}
+
+func (s *stripeClient) Coupons() StripeCoupons {
+	return s.client.Coupons
+}
+
+func (s *stripeClient) PromoCodes() StripePromoCodes {
+	return s.client.PromotionCodes
 }
 
 // NewStripeClient creates Stripe client from configuration.

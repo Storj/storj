@@ -228,10 +228,10 @@ export default class RegisterArea extends Vue {
     }
 
     /**
-     * Indicates if coupon code ui is enabled
+     * Indicates if coupon code ui is enabled for signup.
      */
-    public get couponCodeUIEnabled(): boolean {
-        return this.$store.state.appStateModule.couponCodeUIEnabled;
+    public get couponCodeSignupUIEnabled(): boolean {
+        return this.$store.state.appStateModule.couponCodeSignupUIEnabled;
     }
 
     /**

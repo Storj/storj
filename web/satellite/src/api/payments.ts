@@ -255,6 +255,7 @@ export class PaymentsHttpApi implements PaymentsApi {
     }
 
     /**
+     * TODO(moby) do we need this anymore?
      * Indicates if paywall is enabled.
      *
      * @param userId
@@ -273,5 +274,25 @@ export class PaymentsHttpApi implements PaymentsApi {
         }
 
         return await response.json();
+    }
+
+    /**
+     * applyCouponCode applies a coupon code.
+     *
+     * @param couponCode
+     * @throws Error
+     */
+    public async applyCouponCode(couponCode: string): Promise<void> {
+        const path = `${this.ROOT_PATH}/couponcodes/apply`;
+        const response = await this.client.patch(path, couponCode);
+
+        if (response.ok) {
+            return;
+        }
+
+        if (response.status === 401) {
+            throw new ErrorUnauthorized();
+        }
+        throw new Error(`Can not apply coupon code "${couponCode}"`);
     }
 }

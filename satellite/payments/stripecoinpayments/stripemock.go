@@ -10,13 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stripe/stripe-go"
-	"github.com/stripe/stripe-go/charge"
-	"github.com/stripe/stripe-go/customerbalancetransaction"
-	"github.com/stripe/stripe-go/form"
-	"github.com/stripe/stripe-go/invoice"
-	"github.com/stripe/stripe-go/invoiceitem"
-	"github.com/stripe/stripe-go/paymentmethod"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/charge"
+	"github.com/stripe/stripe-go/v72/customerbalancetransaction"
+	"github.com/stripe/stripe-go/v72/form"
+	"github.com/stripe/stripe-go/v72/invoice"
+	"github.com/stripe/stripe-go/v72/invoiceitem"
+	"github.com/stripe/stripe-go/v72/paymentmethod"
+	"github.com/stripe/stripe-go/v72/promotioncode"
 
 	"storj.io/common/storj"
 	"storj.io/common/testrand"
@@ -48,6 +49,8 @@ type mockStripeState struct {
 	invoiceItems                *mockInvoiceItems
 	customerBalanceTransactions *mockCustomerBalanceTransactions
 	charges                     *mockCharges
+	coupons                     *mockCoupons
+	promoCodes                  *mockPromoCodes
 }
 
 type mockStripeClient struct {
@@ -118,6 +121,14 @@ func (m *mockStripeClient) CustomerBalanceTransactions() StripeCustomerBalanceTr
 
 func (m *mockStripeClient) Charges() StripeCharges {
 	return m.charges
+}
+
+func (m *mockStripeClient) Coupons() StripeCoupons {
+	return m.coupons
+}
+
+func (m *mockStripeClient) PromoCodes() StripePromoCodes {
+	return m.promoCodes
 }
 
 type mockCustomers struct {
@@ -261,12 +272,27 @@ func newMockPaymentMethods() *mockPaymentMethods {
 	}
 }
 
+// listContainer implements Stripe's ListContainer interface.
+type listContainer struct {
+	listMeta *stripe.ListMeta
+}
+
+func newListContainer(meta *stripe.ListMeta) *listContainer {
+	return &listContainer{listMeta: meta}
+}
+
+func (c *listContainer) GetListMeta() *stripe.ListMeta {
+	return c.listMeta
+}
+
 func (m *mockPaymentMethods) List(listParams *stripe.PaymentMethodListParams) *paymentmethod.Iter {
-	listMeta := stripe.ListMeta{
+	listMeta := &stripe.ListMeta{
 		HasMore:    false,
 		TotalCount: uint32(len(m.attached)),
 	}
-	return &paymentmethod.Iter{Iter: stripe.GetIter(nil, func(*stripe.Params, *form.Values) ([]interface{}, stripe.ListMeta, error) {
+	lc := newListContainer(listMeta)
+
+	query := stripe.Query(func(*stripe.Params, *form.Values) ([]interface{}, stripe.ListContainer, error) {
 		mocks.Lock()
 		defer mocks.Unlock()
 
@@ -280,8 +306,9 @@ func (m *mockPaymentMethods) List(listParams *stripe.PaymentMethodListParams) *p
 			ret[i] = v
 		}
 
-		return ret, listMeta, nil
-	})}
+		return ret, lc, nil
+	})
+	return &paymentmethod.Iter{Iter: stripe.GetIter(nil, query)}
 }
 
 func (m *mockPaymentMethods) New(params *stripe.PaymentMethodParams) (*stripe.PaymentMethod, error) {
@@ -404,7 +431,7 @@ func (m *mockCustomerBalanceTransactions) List(listParams *stripe.CustomerBalanc
 	mocks.Lock()
 	defer mocks.Unlock()
 
-	return &customerbalancetransaction.Iter{Iter: stripe.GetIter(listParams, func(p *stripe.Params, b *form.Values) ([]interface{}, stripe.ListMeta, error) {
+	query := stripe.Query(func(p *stripe.Params, b *form.Values) ([]interface{}, stripe.ListContainer, error) {
 		txs := m.transactions[*listParams.Customer]
 		ret := make([]interface{}, len(txs))
 
@@ -412,12 +439,16 @@ func (m *mockCustomerBalanceTransactions) List(listParams *stripe.CustomerBalanc
 			ret[i] = v
 		}
 
-		listMeta := stripe.ListMeta{
+		listMeta := &stripe.ListMeta{
 			TotalCount: uint32(len(txs)),
 		}
 
-		return ret, listMeta, nil
-	})}
+		lc := newListContainer(listMeta)
+
+		return ret, lc, nil
+	})
+
+	return &customerbalancetransaction.Iter{Iter: stripe.GetIter(listParams, query)}
 }
 
 type mockCharges struct {
@@ -425,4 +456,20 @@ type mockCharges struct {
 
 func (m *mockCharges) List(listParams *stripe.ChargeListParams) *charge.Iter {
 	return &charge.Iter{Iter: &stripe.Iter{}}
+}
+
+type mockCoupons struct {
+}
+
+func (m *mockCoupons) Get(id string, params *stripe.CouponParams) (*stripe.Coupon, error) {
+	// TODO(moby)
+	return nil, nil
+}
+
+type mockPromoCodes struct {
+}
+
+func (m *mockPromoCodes) List(params *stripe.PromotionCodeListParams) *promotioncode.Iter {
+	// TODO(moby)
+	return nil
 }
