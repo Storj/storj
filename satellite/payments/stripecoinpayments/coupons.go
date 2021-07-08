@@ -12,6 +12,8 @@ import (
 	"storj.io/common/memory"
 	"storj.io/common/uuid"
 	"storj.io/storj/satellite/payments"
+
+    "fmt"
 )
 
 // CouponsDB is an interface for managing coupons table.
@@ -102,6 +104,7 @@ func (coupons *coupons) ListByUserID(ctx context.Context, userID uuid.UUID) (_ [
 	defer mon.Task()(&ctx, userID)(&err)
 
 	couponList, err := coupons.service.db.Coupons().ListByUserID(ctx, userID)
+    fmt.Printf("The string is %s", couponList)
 
 	return couponList, Error.Wrap(err)
 }

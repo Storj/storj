@@ -5,6 +5,7 @@ package consoleapi
 
 import (
 	"encoding/json"
+    "fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -356,6 +357,32 @@ func (p *Payments) ApplyCouponCode(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.serveJSONError(w, http.StatusInternalServerError, err)
 		return
+	}
+}
+
+// ListByUserID return list of all coupons of specified payment account.
+func (p *Payments) ListByUserID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var err error
+	defer mon.Task()(&ctx)(&err)
+
+    w.Header().Set("Content-Type", "application/json")
+
+	couponList, err := p.service.Payments().ListByUserID(ctx)
+    if err != nil {
+		if console.ErrUnauthorized.Has(err) {
+			p.serveJSONError(w, http.StatusUnauthorized, err)
+			return
+		}
+
+		p.serveJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+    err = json.NewEncoder(w).Encode(&couponList)
+
+	if err != nil {
+		p.log.Error("failed to return coupon list", zap.Error(ErrPaymentsAPI.Wrap(err)))
 	}
 }
 

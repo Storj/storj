@@ -12,7 +12,11 @@
                         @click="onCloseClick"
                     />
                 </div>
-                <AddCouponCodeInput />
+                <AddCouponCodeInput
+                    v-if="!showConfirmMessage"
+                    @toggleConfirmMessage="toggleConfirmMessage"
+                    @onApplyClick="onApplyClick"
+                />
             </div>
         </div>
     </div>
@@ -24,10 +28,12 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import AddCouponCodeInput from '@/components/common/AddCouponCodeInput.vue';
 import HeaderlessInput from '@/components/common/HeaderlessInput.vue';
 import ValidationMessage from '@/components/common/ValidationMessage.vue';
+import VButton from '@/components/common/VButton.vue';
 
 import CloseIcon from '@/../static/images/common/closeCross.svg';
 import CheckIcon from '@/../static/images/common/success-check.svg';
 
+import { PaymentsHttpApi } from '@/api/payments';
 import { RouteConfig } from '@/router';
 
 @Component({
@@ -36,6 +42,7 @@ import { RouteConfig } from '@/router';
         CloseIcon,
         CheckIcon,
         AddCouponCodeInput,
+        VButton
     },
 })
 export default class AddCouponCode extends Vue {
@@ -45,13 +52,17 @@ export default class AddCouponCode extends Vue {
     @Prop({default: false})
     protected readonly error: boolean;
 
+    private showConfirmMessage = false;
+
+    private readonly payments: PaymentsHttpApi = new PaymentsHttpApi();
+
+
     /**
     * Closes add coupon modal.
     */
     public onCloseClick(): void {
         this.$router.push(RouteConfig.Account.with(RouteConfig.Billing).path);
     }
-
 }
 </script>
 
